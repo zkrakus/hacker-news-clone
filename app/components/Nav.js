@@ -1,4 +1,25 @@
 import React from "react";
+import PropTypes from "prop-types";
+
+function NavLinks({ selected, onUpdateNav }) {
+  const navs = ["Top", "New", "Best"];
+
+  return (
+    <ul className="flex-center">
+      {navs.map((nav) => (
+        <li key={nav}>
+          <button
+            className="btn-clear nav-link"
+            style={nav === selected ? { color: "rgb(187,46, 31)" } : null}
+            onClick={() => onUpdateNav(nav)}
+          >
+            {nav}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default class Nav extends React.Component {
   constructor(props) {
@@ -17,26 +38,20 @@ export default class Nav extends React.Component {
   }
 
   render() {
-    const navs = ["Top", "New"];
+    const { selectedNav } = this.state;
 
     return (
-      <ul className="flex-center">
-        {navs.map((nav) => (
-          <li key={nav}>
-            <button
-              className="btn-clear nav-link"
-              style={
-                nav === this.state.selectedNav
-                  ? { color: "rgb(187,46, 31)" }
-                  : null
-              }
-              onClick={() => this.updateNav(nav)}
-            >
-              {nav}
-            </button>
-          </li>
-        ))}
-      </ul>
+      <React.Fragment>
+        <NavLinks
+          selected={selectedNav}
+          onUpdateNav={this.updateNav}
+        ></NavLinks>
+      </React.Fragment>
     );
   }
 }
+
+NavLinks.propTypes = {
+  selected: PropTypes.string.isRequired,
+  onUpdateNav: PropTypes.func.isRequired,
+};
