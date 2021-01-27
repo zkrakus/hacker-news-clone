@@ -1,5 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
+import { fetchMainPosts, fetchPosts } from "../utils/api";
 
 function NavLinks({ selected, onUpdateNav }) {
   const navs = ["Top", "New", "Best"];
@@ -27,18 +28,52 @@ export default class Nav extends React.Component {
 
     this.state = {
       selectedNav: "Top",
+      posts: {},
+      error: null,
     };
 
-    // This matters when we are passing the invocation to another component
     this.updateNav = this.updateNav.bind(this);
+    this.isLoading = this.isLoading.bind(this);
+  }
+
+  componentDidMount() {
+    this.updateNav(this.state.selectedNav);
   }
 
   updateNav(selectedNav) {
-    this.setState({ selectedNav: selectedNav });
+    this.setState({
+      selectedNav: selectedNav,
+      error: null,
+    });
+
+    if (!this.state.posts[selectedNav]) {
+      fetchMainPosts(selectedNav)
+        .then((data) => {
+          this.setState(({ posts }) => ({
+            posts: {
+              ...posts,
+              [selectedNav]: data,
+            },
+          }));
+        })
+        .catch(() => {
+          console.warn("Error fetching posts", error);
+
+          this.setState({
+            error: "There was an error fetching the posts.",
+          });
+        });
+    }
+  }
+
+  isLoading() {
+    const { selectedNav, posts, error } = this.state;
+
+    return !posts[selectedNav] && error === null;
   }
 
   render() {
-    const { selectedNav } = this.state;
+    const { selectedNav, posts, error } = this.state;
 
     return (
       <React.Fragment>
@@ -46,6 +81,11 @@ export default class Nav extends React.Component {
           selected={selectedNav}
           onUpdateNav={this.updateNav}
         ></NavLinks>
+        {this.isLoading() && <p>LOADING</p>}
+        {error && <p>{error}</p>}
+        {posts[selectedNav] && (
+          <pre>{JSON.stringify(posts[selectedNav], null, 2)}</pre>
+        )}
       </React.Fragment>
     );
   }
