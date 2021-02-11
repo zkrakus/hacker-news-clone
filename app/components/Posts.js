@@ -1,156 +1,94 @@
 import React from "react";
 import PropTypes from "prop-types";
 import { fetchMainPosts } from "../utils/api";
-import Loading from "./Loading";
+import PostsList from "./PostsList";
 
-function formatDate(date) {
-  return (
-    date.getMonth() +
-    "/" +
-    date.getDate() +
-    "/" +
-    date.getFullYear() +
-    "," +
-    " " +
-    (date.getHours() === 12 || date.getHours() === 0
-      ? 12
-      : date.getHours() % 12) +
-    ":" +
-    date.getMinutes().toLocaleString("en-US", {
-      minimumIntegerDigits: 2,
-      useGrouping: false,
-    }) +
-    " " +
-    (date.getHours() > 11 ? "PM" : "AM")
-  );
+// We pull Top posts both for the Top filterId and on the homepage where the match props is empty
+function getFilterIdFromProps(props) {
+  return "filterId" in props.match.params ? props.match.params.filterId : "Top";
 }
-
-function NavLinks({ selected, onUpdateNav }) {
-  const navs = ["Top", "New", "Best"];
-
-  return (
-    <nav className="row space-between">
-      <ul className="row nav">
-        {navs.map((nav) => (
-          <li key={nav}>
-            <a
-              className="nav-link"
-              style={nav === selected ? { color: "rgb(187,46, 31)" } : null}
-              onClick={() => onUpdateNav(nav)}
-            >
-              {nav}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
-}
-
-function PostsLists({ posts }) {
-  //console.log(posts);
-
-  return (
-    <ul className="list space-around">
-      {posts.map((post) => {
-        const { title, by, time, descendants, id, kids, url } = post;
-        let post_dateTime = new Date(time * 1000); // convert to milliseconds
-
-        return (
-          <li key={id} className="post">
-            <a className="link" href={url}>
-              {/* Be sure to link to a comments when there is no URL */}
-              {title}
-            </a>
-            <div className="meta-info-light">
-              <span>
-                by&nbsp;
-                <a href={"/"}>{by}</a>
-              </span>
-              <span>
-                on&nbsp;
-                {formatDate(post_dateTime)}
-              </span>
-            </div>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-PostsLists.propTypes = {
-  posts: PropTypes.array.isRequired,
-};
 
 export default class Posts extends React.Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      selectedNav: "Top",
       posts: {},
       error: null,
+      loading: true,
+      filterId: getFilterIdFromProps(props),
     };
 
-    this.updateNav = this.updateNav.bind(this);
-    this.isLoading = this.isLoading.bind(this);
+    this.handleFetch = this.handleFetch.bind(this);
+    // this.isLoading = this.isLoading.bind(this);
   }
 
   componentDidMount() {
-    this.updateNav(this.state.selectedNav);
+    this.handleFetch(this.state.filterId);
   }
 
-  updateNav(selectedNav) {
+  componentDidUpdate(prevProps, prevState) {
+    let filterId = getFilterIdFromProps(this.props);
+    let prevFilterId = getFilterIdFromProps(prevProps);
+
+    if (
+      filterId !== prevFilterId &&
+      !this.state.posts[filterId] &&
+      this.state.loading !== true
+    )
+      this.handleFetch(filterId);
+
+    if (this.state.filterId != filterId) this.setState({ filterId });
+  }
+
+  handleFetch(filterId) {
     this.setState({
-      selectedNav: selectedNav,
       error: null,
+      loading: true,
     });
 
-    if (!this.state.posts[selectedNav]) {
-      fetchMainPosts(selectedNav)
-        .then((data) => {
-          this.setState(({ posts }) => ({
-            posts: {
-              ...posts,
-              [selectedNav]: data,
-            },
-          }));
-        })
-        .catch(() => {
-          console.warn("Error fetching posts", error);
+    fetchMainPosts(filterId)
+      .then((data) => {
+        this.setState(({ posts }) => ({
+          posts: {
+            ...posts,
+            [filterId]: data,
+          },
+          filterId,
+          loading: false,
+          error: false,
+        }));
+      })
+      .catch(({ message }) => {
+        console.warn("Error fetching posts", message);
 
-          this.setState({
-            error: "There was an error fetching the posts.",
-          });
+        this.setState({
+          error: message,
+          loading: false,
         });
-    }
+      });
   }
 
-  isLoading() {
-    const { selectedNav, posts, error } = this.state;
+  // isLoading() {
+  //   const { selectedNav, posts, error } = this.state;
 
-    return !posts[selectedNav] && error === null;
-  }
+  //   return !posts[selectedNav] && error === null;
+  // }
 
   render() {
-    const { selectedNav, posts, error } = this.state;
+    const { filterId, posts, error } = this.state;
 
     return (
       <React.Fragment>
-        <NavLinks
-          selected={selectedNav}
-          onUpdateNav={this.updateNav}
-        ></NavLinks>
-        {this.isLoading() && <Loading speed={300} text="Loading" />}
-        {error && <p>{error}</p>}
-        {posts[selectedNav] && <PostsLists posts={posts[selectedNav]} />}
+        {/* {{this.isLoading() && <Loading speed={300} text="Loading" />} */}
+        {/* {error && <p>{error}</p>} */}
+        {posts[filterId] && <PostsList posts={posts[filterId]} />}
       </React.Fragment>
     );
   }
 }
 
-NavLinks.propTypes = {
-  selected: PropTypes.string.isRequired,
-  onUpdateNav: PropTypes.func.isRequired,
-};
+// NavLinks.propTypes = {
+//   selected: PropTypes.string.isRequired,
+//   onUpdatePosts: PropTypes.func.isRequired,
+// };
