@@ -75,7 +75,45 @@ li {
     margin-right: 6px;
 }
 
+.meta-info-dark {
+    margin-top: 5px;
+    color: gray;
+  }
+  
+  .meta-info-dark a {
+    color: #bebebe;
+  }
+  
+  .meta-info-dark span {
+    margin: 10px 0;
+    margin-right: 6px;
+  }
 
 .post {
     margin: 20px 0;
 }
+
+.header {
+    margin-bottom: 5px;
+}
+
+.center-text {
+    text-align: center;
+}
+
+.comment {
+    background: rgba(128, 128, 128, 0.1411764705882353);
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+}
+
+.dark {
+    color: #DADADA;
+    background: #1c2022;
+    min-height: 100%;
+  }
+  
+  .dark a {
+    color: rgb(203, 203, 203);
+  }

@@ -2,10 +2,11 @@ import React from "react";
 import PropTypes from "prop-types";
 import { fetchMainPosts } from "../utils/api";
 import PostsList from "./PostsList";
+import Loading from "./Loading";
 
 // We pull Top posts both for the Top filterId and on the homepage where the match props is empty
-function getFilterIdFromProps(props) {
-  return "filterId" in props.match.params ? props.match.params.filterId : "Top";
+function checkDefaultPostType(type) {
+  return !type ? "Top" : type;
 }
 
 export default class Posts extends React.Component {
@@ -16,29 +17,21 @@ export default class Posts extends React.Component {
       posts: {},
       error: null,
       loading: true,
-      filterId: getFilterIdFromProps(props),
     };
 
     this.handleFetch = this.handleFetch.bind(this);
-    // this.isLoading = this.isLoading.bind(this);
   }
 
   componentDidMount() {
-    this.handleFetch(this.state.filterId);
+    let type = checkDefaultPostType(this.props.type);
+    this.handleFetch(type);
   }
 
-  componentDidUpdate(prevProps, prevState) {
-    let filterId = getFilterIdFromProps(this.props);
-    let prevFilterId = getFilterIdFromProps(prevProps);
-
-    if (
-      filterId !== prevFilterId &&
-      !this.state.posts[filterId] &&
-      this.state.loading !== true
-    )
-      this.handleFetch(filterId);
-
-    if (this.state.filterId != filterId) this.setState({ filterId });
+  componentDidUpdate(prevProps) {
+    if (prevProps.type !== this.props.type) {
+      let type = checkDefaultPostType(this.props.type);
+      this.handleFetch(type);
+    }
   }
 
   handleFetch(filterId) {
@@ -69,26 +62,25 @@ export default class Posts extends React.Component {
       });
   }
 
-  // isLoading() {
-  //   const { selectedNav, posts, error } = this.state;
-
-  //   return !posts[selectedNav] && error === null;
-  // }
-
   render() {
-    const { filterId, posts, error } = this.state;
+    const { filterId, posts, error, loading } = this.state;
+
+    if (loading === true) {
+      return <Loading />;
+    }
+
+    if (error) {
+      return <p className="center-text error">{error}</p>;
+    }
 
     return (
       <React.Fragment>
-        {/* {{this.isLoading() && <Loading speed={300} text="Loading" />} */}
-        {/* {error && <p>{error}</p>} */}
-        {posts[filterId] && <PostsList posts={posts[filterId]} />}
+        <PostsList posts={posts[filterId]} />
       </React.Fragment>
     );
   }
 }
 
-// NavLinks.propTypes = {
-//   selected: PropTypes.string.isRequired,
-//   onUpdatePosts: PropTypes.func.isRequired,
-// };
+Posts.propTypes = {
+  type: PropTypes.oneOf(["Top", "New", "Best"]),
+};
